@@ -1,3 +1,6 @@
+#pragma once
+
+// ASCOM Alpaca Definitions
 #define SERVER_NAME "TCN"
 #define MANUFACTURER "Christian Kardach"
 #define MANUFACTURER_VERSION "1.0"
@@ -12,10 +15,11 @@
 #define DRIVER_INFO "TCN ASCOM Alpaca Driver"
 #define DRIVER_VERSION "1.0"
 
-#define DirectionPin  4
-#define PulsePin  8
-#define EnablePin 5
-#define CWPin 6
-#define CCWPin 7
-#define HomeSensorPin 10
-#define LEDPin 9
+// Stepper Setup
+#define DIR_PIN  5
+#define STEP_PIN  4
+#define EN_PIN 14
+#define CW_PIN 12
+#define CCW_PIN 13
+#define HOME_PIN 2
+

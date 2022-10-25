@@ -5,6 +5,7 @@
 
 #include "arduino_secrets.h"
 #include "device/RotatorHandler.h"
+#include "device/RotatorDevice.h"
 
 int status = WL_IDLE_STATUS;
 ///////enter your sensitive data in the Secret tab/arduino_secrets.h
@@ -23,7 +24,8 @@ ESP8266WebServer *server = new ESP8266WebServer(alpacaPort);
 ESP8266HTTPUpdateServer updater;
 WiFiUDP Udp;
 
-RotatorHandler *device = new RotatorHandler(server);
+RotatorDevice* rotatorDevice = new RotatorDevice();
+RotatorHandler *device = new RotatorHandler(server, rotatorDevice);
 
 void CheckForDiscovery()
 {
@@ -102,7 +104,7 @@ void handleDriver0CanReverse() { device->handlerDriver0CanReverse(); }
 void handleDriver0IsMoving() { device->handlerDriver0IsMoving(); }
 void handleDriver0MechanicalPosition() { device->handlerDriver0MechanicalPosition(); }
 void handleDriver0Position() { device->handlerDriver0Position(); }
-void handleDriver0Reverse() { device->handlerDriver0Reverse(); }
+void handleDriver0GetReverse() { device->handlerDriver0GetReverse(); }
 void handleDriver0StepSize() { device->handlerDriver0StepSize(); }
 void handleDriver0TargetPosition() { device->handlerDriver0TargetPosition(); }
 
@@ -168,7 +170,7 @@ void setup()
   server->on("/api/v1/rotator/0/ismoving", HTTP_GET, handleDriver0IsMoving);
   server->on("/api/v1/rotator/0/mechanicalposition", HTTP_GET, handleDriver0MechanicalPosition);
   server->on("/api/v1/rotator/0/position", HTTP_GET, handleDriver0Position);
-  server->on("/api/v1/rotator/0/reverse", HTTP_GET, handleDriver0Reverse);
+  server->on("/api/v1/rotator/0/reverse", HTTP_GET, handleDriver0GetReverse);
   server->on("/api/v1/rotator/0/stepsize", HTTP_GET, handleDriver0StepSize);
   server->on("/api/v1/rotator/0/targetposition", HTTP_GET, handleDriver0TargetPosition);
 
@@ -197,4 +199,6 @@ void loop()
 {
   server->handleClient();
   CheckForDiscovery();
+
+  rotatorDevice->update();
 }

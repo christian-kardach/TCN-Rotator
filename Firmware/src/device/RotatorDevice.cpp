@@ -2,8 +2,24 @@
 
 RotatorDevice::RotatorDevice()
 {
-    //pinMode(LIGHT_PIN_1, OUTPUT);
-    //pinMode(LIGHT_PIN_2, OUTPUT);
+    pinMode(CW_PIN, INPUT_PULLUP); 
+    pinMode(CCW_PIN, INPUT_PULLUP);
+
+    pinMode(STEP_PIN, OUTPUT);
+    pinMode(DIR_PIN, OUTPUT);
+
+    //pinMode(EN_PIN, OUTPUT);
+    
+    digitalWrite(STEP_PIN, LOW);
+    digitalWrite(DIR_PIN, LOW);
+    //digitalWrite(EN_PIN, LOW);
+
+    _stepper = new AccelStepper(AccelStepper::FULL4WIRE, STEP_PIN, DIR_PIN, CW_PIN, CCW_PIN, true);
+    _stepper->setMaxSpeed(800);// 5000 works good,  use 500000 for confrom test1000 geared rotator10000 for geared stepper   200 for non-geared large stepper(500 max)  also may depend on what else is on loop()
+    _stepper->setAcceleration(1000);//1000 for geared rotator  10000 for geared stepper    1000 for non-geared large stepper
+    _stepper->setCurrentPosition(0);
+    //_stepper->setCurrentPosition(readFocuserPos());
+  
 }
 
 /*
@@ -21,6 +37,7 @@ True if the rotator is currently moving to a new position. False if the focuser 
 */
 bool RotatorDevice::getIsMoving()
 {
+    Log.traceln("RotatorDevice::getIsMoving()");
     return _isMoving;
 }
 
@@ -30,6 +47,7 @@ Returns the raw mechanical position of the rotator in degrees.
 */
 double RotatorDevice::getMechanicalPosition()
 {
+    Log.traceln("RotatorDevice::getMechanicalPosition()");
     // In Degrees
     return _mechanicalPosition;
 }
@@ -40,8 +58,10 @@ Current instantaneous Rotator position, in degrees.
 */
 double RotatorDevice::getPosition()
 {
+    Log.traceln("RotatorDevice::getPosition()");
     // In Degrees
-    return _position;
+    double val = 0.0;
+    return val; //(double)_stepper->currentPosition();
 }
 
 /**
@@ -52,6 +72,7 @@ double RotatorDevice::getPosition()
  */
 bool RotatorDevice::getReverseState()
 {
+    Log.traceln("RotatorDevice::getReverseState()");
     return _reverseState;
 }
 
@@ -70,6 +91,7 @@ The destination position angle for Move() and MoveAbsolute().
 */
 double RotatorDevice::getTargetPosition()
 {
+    Log.traceln("RotatorDevice::getTargetPosition()");
     return _targetPosition;
 }
 
@@ -80,6 +102,7 @@ Sets the rotator’s Reverse state.
 */
 void RotatorDevice::putReverseState(bool reverse)
 {
+    Log.traceln("RotatorDevice::putReverseState(bool reverse)");
     _reverseState = reverse;
 }
 
@@ -89,6 +112,8 @@ Immediately stop any Rotator motion due to a previous Move or MoveAbsolute metho
 */
 void RotatorDevice::putHalt()
 {
+    Log.traceln("RotatorDevice::putHalt()");
+    _stepper->stop();
     _halt = true;
 }
 
@@ -98,7 +123,9 @@ Causes the rotator to move Position degrees relative to the current Position val
 */
 void RotatorDevice::putMove(double position)
 {
+    Log.traceln("RotatorDevice::putMove(double position)");
     _targetPosition = position;
+    
 }
 
 /*
@@ -107,6 +134,7 @@ Causes the rotator to move the absolute position of Position degrees.
 */
 void RotatorDevice::putMoveAbsolute(double position)
 {
+    Log.traceln("RotatorDevice::putMoveAbsolute(double position)");
     _targetPosition = position;
 }
 
@@ -116,6 +144,7 @@ Causes the rotator to move the mechanical position of Position degrees.
 */
 void RotatorDevice::putMoveMechanical(double position)
 {
+    Log.traceln("RotatorDevice::putMoveMechanical(double position)");
     _targetMechanicalPosition = position;
 }
 
@@ -128,30 +157,30 @@ void RotatorDevice::putSync(double position)
     _targetMechanicalPosition = position;
 }
 
+void RotatorDevice::update()
+{
+    if(_stepper == nullptr)
+    {
+        return;
+    }
 
-/*
-int RotatorDevice::getBrightness()
-{
-    return _brightness;
-}
-void RotatorDevice::setCalibratonOn(int brightness)
-{
-    analogWrite(LIGHT_PIN_1, brightness);
-    analogWrite(LIGHT_PIN_2, brightness);
-    _brightness = brightness;
-    calibrationState = 3;
-}
+    if (_isFindingHome == true){
+        _stepper->moveTo(_targetPosition);
+      return;
+    }
 
-void RotatorDevice::setCalibratonOff()
-{
-    analogWrite(LIGHT_PIN_1, 0);
-    analogWrite(LIGHT_PIN_2, 0);
-    _brightness = 0;
-    calibrationState = 1;
-}
+      
+    if(_targetPosition != _stepper->currentPosition())
+    {
+        if(_targetPosition < 0 || _targetPosition > maxSteps)
+        {
+            Serial.println("out of range");
+            return;
+        }
+    else
+    {
+       _stepper->moveTo(_targetPosition);
+    }
+  }
 
-void RotatorDevice::setCoverState(int state)
-{
-    coverState = state;
 }
-*/

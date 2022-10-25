@@ -12,10 +12,10 @@ Invalid operation 0x40B (1035) 0x8004040B
 Action not implemented 0x40C (1036) 0x8004040C
 */
 
-RotatorHandler::RotatorHandler(ESP8266WebServer *server)
+RotatorHandler::RotatorHandler(ESP8266WebServer *server, RotatorDevice* rotatorDevice)
 {
     _server = server;
-    rotatorDevice = new RotatorDevice();
+    _rotatorDevice = rotatorDevice;
     serverTransactionID = 0;
 }
 
@@ -289,7 +289,7 @@ void RotatorHandler::handlerConnected()
         String deviceType = _server->arg("device_type");
         //uint32_t deviceNumber = (uint32_t)_server->arg("device_number").toInt();
 
-        returnBoolValue(coverCalibratorDevice->connected, "", 0);
+        returnBoolValue(_rotatorDevice->connected, "", 0);
     }
 
     if (_server->method() == HTTP_PUT)
@@ -297,8 +297,8 @@ void RotatorHandler::handlerConnected()
         Log.traceln("handlerConnected POST called");
 
         // String _connected = _server->arg("Connected");
-        coverCalibratorDevice->connected = (bool)_server->arg("Connected");
-        // Log.traceln("%t", CR, coverCalibratorDevice->connected);
+        _rotatorDevice->connected = (bool)_server->arg("Connected");
+        // Log.traceln("%t", CR, _rotatorDevice->connected);
 
         returnEmpty("", 0);
     }
@@ -441,7 +441,7 @@ void RotatorHandler::handlerDriver0CanReverse()
     
     clientID = (uint32_t)_server->arg("ClientID").toInt();
     transID = (uint32_t)_server->arg("ClientTransactionID").toInt();
-    returnBoolValue(coverCalibratorDevice->getCanReverse(), "", 0);
+    returnBoolValue(_rotatorDevice->getCanReverse(), "", 0);
 }
 
 /*
@@ -453,7 +453,7 @@ void RotatorHandler::handlerDriver0IsMoving()
     
     clientID = (uint32_t)_server->arg("ClientID").toInt();
     transID = (uint32_t)_server->arg("ClientTransactionID").toInt();
-    returnBoolValue(rotatorDevice->getIsMoving(), "", 0);
+    returnBoolValue(_rotatorDevice->getIsMoving(), "", 0);
 }
 
 /*
@@ -465,7 +465,7 @@ void RotatorHandler::handlerDriver0MechanicalPosition()
     
     clientID = (uint32_t)_server->arg("ClientID").toInt();
     transID = (uint32_t)_server->arg("ClientTransactionID").toInt();
-    returnDoubleValue(rotatorDevice->getMechanicalPosition(), "", 0);
+    returnDoubleValue(_rotatorDevice->getMechanicalPosition(), "", 0);
 }
 
 /*
@@ -477,19 +477,19 @@ void RotatorHandler::handlerDriver0Position()
     
     clientID = (uint32_t)_server->arg("ClientID").toInt();
     transID = (uint32_t)_server->arg("ClientTransactionID").toInt();
-    returnDoubleValue(rotatorDevice->getPosition(), "", 0);
+    returnDoubleValue(_rotatorDevice->getPosition(), "", 0);
 }
 
 /*
 Returns the rotator’s Reverse state.
 */
-void RotatorHandler::handlerDriver0Reverse()
+void RotatorHandler::handlerDriver0GetReverse()
 {
     Log.traceln("handlerDriver0Reverse called");
     
     clientID = (uint32_t)_server->arg("ClientID").toInt();
     transID = (uint32_t)_server->arg("ClientTransactionID").toInt();
-    returnBoolValue(rotatorDevice->getReverseState(), "", 0);
+    returnBoolValue(_rotatorDevice->getReverseState(), "", 0);
 }
 
 /*
@@ -501,7 +501,7 @@ void RotatorHandler::handlerDriver0StepSize()
     
     clientID = (uint32_t)_server->arg("ClientID").toInt();
     transID = (uint32_t)_server->arg("ClientTransactionID").toInt();
-    returnDoubleValue(rotatorDevice->getStepSize(), "", 0);
+    returnDoubleValue(_rotatorDevice->getStepSize(), "", 0);
 }
 
 /*
@@ -513,7 +513,7 @@ void RotatorHandler::handlerDriver0TargetPosition()
     
     clientID = (uint32_t)_server->arg("ClientID").toInt();
     transID = (uint32_t)_server->arg("ClientTransactionID").toInt();
-    returnDoubleValue(rotatorDevice->getTargetPosition(), "", 0);
+    returnDoubleValue(_rotatorDevice->getTargetPosition(), "", 0);
 }
 
 // PUT
@@ -534,7 +534,7 @@ void RotatorHandler::handlerDriver0Reverse()
     if (_server->method() == HTTP_PUT)
     {
         
-        rotatorDevice->putReverseState(1);
+        _rotatorDevice->putReverseState(1);
         returnEmpty("", 0);
     }
 }
@@ -554,7 +554,7 @@ void RotatorHandler::handlerDriver0Halt()
     if (_server->method() == HTTP_PUT)
     {
         
-        rotatorDevice->putHalt();
+        _rotatorDevice->putHalt();
         returnEmpty("", 0);
     }
 }
@@ -564,6 +564,7 @@ Causes the rotator to move Position degrees relative to the current Position val
 */
 void RotatorHandler::handlerDriver0Move()
 {
+    debugServerQuery();
     Log.traceln("handlerDriver0Move called");
 
     clientID = (uint32_t)_server->arg("ClientID").toInt();
@@ -576,7 +577,7 @@ void RotatorHandler::handlerDriver0Move()
     if (_server->method() == HTTP_PUT)
     {
         
-        rotatorDevice->putMove(position);
+        _rotatorDevice->putMove(position);
         returnEmpty("", 0);
     }
 }
@@ -586,6 +587,7 @@ Causes the rotator to move the absolute position of Position degrees.
 */
 void RotatorHandler::handlerDriver0MoveAbsolute()
 {
+    debugServerQuery();
     Log.traceln("handlerDriver0MoveAbsolute called");
 
     clientID = (uint32_t)_server->arg("ClientID").toInt();
@@ -596,7 +598,7 @@ void RotatorHandler::handlerDriver0MoveAbsolute()
     if (_server->method() == HTTP_PUT)
     {
         double position = _server->arg("Position ").toDouble();
-        rotatorDevice->putMoveAbsolute(position);
+        _rotatorDevice->putMoveAbsolute(position);
         returnEmpty("", 0);
     }
 }
@@ -616,7 +618,7 @@ void RotatorHandler::handlerDriver0MoveMechanical()
     if (_server->method() == HTTP_PUT)
     {
         double position = _server->arg("Position ").toDouble();
-        rotatorDevice->putMoveMechanical(position);
+        _rotatorDevice->putMoveMechanical(position);
         returnEmpty("", 0);
     }
 }
@@ -636,7 +638,7 @@ void RotatorHandler::handlerDriver0Sync()
     if (_server->method() == HTTP_PUT)
     {
         double position = _server->arg("Position ").toDouble();
-        rotatorDevice->putSync(position);
+        _rotatorDevice->putSync(position);
         returnEmpty("", 0);
     }
 }

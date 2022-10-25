@@ -2,12 +2,11 @@
 
 #include <Arduino.h>
 #include <ArduinoLog.h>
+#include <AccelStepper.h>
 #include "configuration.hpp"
 
 class RotatorDevice
 {
-
-
     public:
         RotatorDevice();
 
@@ -29,8 +28,12 @@ class RotatorDevice
         void putMoveMechanical(double position);
         void putSync(double position);
 
+        void update();
+
     private:
-        int _brightness;
+        AccelStepper* _stepper;
+        bool _isFindingHome = false;
+
         bool _canReverse = true;
         bool _isMoving = false;
         double _mechanicalPosition = 0.0; // Degrees
@@ -41,6 +44,12 @@ class RotatorDevice
         double _targetMechanicalPosition = 0.0;
 
         bool _halt = false;
+
+        // *************  this value must be changed for each specific setup ***************************************
+        long maxSteps = 72000;  // **** steps needed for 2 complete revolutions.  prevent cord wrap.  
+        //  Must also enter this value/720 = steps/degree for first time ASCOM driver setup, click "properties 
+        // ******************************************************************************************************
+
 
         //void writeRelayData(int relay, int boolValue, double doubleValue);
         //byte relayData = B00000000;

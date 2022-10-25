@@ -13,7 +13,7 @@ class RotatorHandler
     ESP8266WebServer* _server;
 
     public:
-        RotatorHandler(ESP8266WebServer* server);
+        RotatorHandler(ESP8266WebServer* server, RotatorDevice* rotatorDevice);
         
         void handlerMgmtVersions();
         void handlerMgmtDescription();
@@ -38,7 +38,7 @@ class RotatorHandler
         void handlerDriver0IsMoving();
         void handlerDriver0MechanicalPosition();
         void handlerDriver0Position();
-        void handlerDriver0Reverse();
+        void handlerDriver0GetReverse();
         void handlerDriver0StepSize();
         void handlerDriver0TargetPosition();
 
@@ -56,7 +56,7 @@ class RotatorHandler
         uint32_t serverTransactionID = 0;
         String uniqueID = "4431281c-8560-4ad7-982f-5a6e507dda19";
 
-        RotatorDevice* rotatorDevice;
+        RotatorDevice* _rotatorDevice;
 
         void incrementServerTransID();
 
