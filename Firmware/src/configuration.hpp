@@ -16,10 +16,19 @@
 #define DRIVER_VERSION "1.0"
 
 // Stepper Setup
-#define DIR_PIN  5
-#define STEP_PIN  4
 #define EN_PIN 14
-#define CW_PIN 12
-#define CCW_PIN 13
-#define HOME_PIN 2
+#define DIR_PIN  12
+#define STEP_PIN  13
 
+#define HOME_PIN 4
+
+#define DEC_WHEEL_CIRCUMFERENCE 502.655f
+#define DEC_PULLEY_TEETH 16
+#define GT2_BELT_PITCH 2.0f
+#define DEC_STEPPER_SPR (400*9)
+#define STEPS_PER_DEGREE 78.125 //((DEC_WHEEL_CIRCUMFERENCE / (DEC_PULLEY_TEETH * GT2_BELT_PITCH) * DEC_STEPPER_SPR / 360.0f))
+
+// (502.655/32.0*3600/360) = 156.875
+
+// Gear ratio 0.128:1
+//46.08:360

@@ -4,6 +4,7 @@
 #include <ArduinoLog.h>
 
 #include "arduino_secrets.h"
+#include "SerialCommand.h"
 #include "device/RotatorHandler.h"
 #include "device/RotatorDevice.h"
 
@@ -24,8 +25,10 @@ ESP8266WebServer *server = new ESP8266WebServer(alpacaPort);
 ESP8266HTTPUpdateServer updater;
 WiFiUDP Udp;
 
+
 RotatorDevice* rotatorDevice = new RotatorDevice();
-RotatorHandler *device = new RotatorHandler(server, rotatorDevice);
+RotatorHandler *rotatorHandler = new RotatorHandler(server, rotatorDevice);
+SerialCommand* serialCommand = new SerialCommand(rotatorDevice);
 
 void CheckForDiscovery()
 {
@@ -82,40 +85,40 @@ void printWifiStatus()
   Log.traceln("signal strength (RSSI): %l dBm" CR, rssi);
 }
 
-void handleMgmtVersions() { device->handlerMgmtVersions(); }
-void handleMgmtDescription() { device->handlerMgmtDescription(); }
-void handleMgmtConfiguredDevices() { device->handlerMgmtConfiguredDevices(); }
+void handleMgmtVersions() { rotatorHandler->handlerMgmtVersions(); }
+void handleMgmtDescription() { rotatorHandler->handlerMgmtDescription(); }
+void handleMgmtConfiguredDevices() { rotatorHandler->handlerMgmtConfiguredDevices(); }
 
-void handleConnected() { device->handlerConnected(); }
-void handleDescriptionGet() { device->handlerDescriptionGet(); }
-void handleDriverInfoGet() { device->handlerDriverInfoGet(); }
-void handleDriverVersionGet() { device->handlerDriverVersionGet(); }
-void handleInterfaceVersionGet() { device->handlerInterfaceVersionGet(); }
-void handleNameGet() { device->handlerNameGet(); }
-void handleSupportedActionsGet() { device->handlerSupportedActionsGet(); }
+void handleConnected() { rotatorHandler->handlerConnected(); }
+void handleDescriptionGet() { rotatorHandler->handlerDescriptionGet(); }
+void handleDriverInfoGet() { rotatorHandler->handlerDriverInfoGet(); }
+void handleDriverVersionGet() { rotatorHandler->handlerDriverVersionGet(); }
+void handleInterfaceVersionGet() { rotatorHandler->handlerInterfaceVersionGet(); }
+void handleNameGet() { rotatorHandler->handlerNameGet(); }
+void handleSupportedActionsGet() { rotatorHandler->handlerSupportedActionsGet(); }
 
-void handleAction() { device->handleAction(); }
-void handleCommandBlind() { device->handleCommandBlind(); }
-void handleCommandBool() { device->handleCommandBool(); }
-void handleCommandString() { device->handleCommandString(); }
+void handleAction() { rotatorHandler->handleAction(); }
+void handleCommandBlind() { rotatorHandler->handleCommandBlind(); }
+void handleCommandBool() { rotatorHandler->handleCommandBool(); }
+void handleCommandString() { rotatorHandler->handleCommandString(); }
 
 // GET
-void handleDriver0CanReverse() { device->handlerDriver0CanReverse(); }
-void handleDriver0IsMoving() { device->handlerDriver0IsMoving(); }
-void handleDriver0MechanicalPosition() { device->handlerDriver0MechanicalPosition(); }
-void handleDriver0Position() { device->handlerDriver0Position(); }
-void handleDriver0GetReverse() { device->handlerDriver0GetReverse(); }
-void handleDriver0StepSize() { device->handlerDriver0StepSize(); }
-void handleDriver0TargetPosition() { device->handlerDriver0TargetPosition(); }
+void handleDriver0CanReverse() { rotatorHandler->handlerDriver0CanReverse(); }
+void handleDriver0IsMoving() { rotatorHandler->handlerDriver0IsMoving(); }
+void handleDriver0MechanicalPosition() { rotatorHandler->handlerDriver0MechanicalPosition(); }
+void handleDriver0Position() { rotatorHandler->handlerDriver0Position(); }
+void handleDriver0GetReverse() { rotatorHandler->handlerDriver0GetReverse(); }
+void handleDriver0StepSize() { rotatorHandler->handlerDriver0StepSize(); }
+void handleDriver0TargetPosition() { rotatorHandler->handlerDriver0TargetPosition(); }
 
 
 // PUT
-void handleDriver0Reverse() { device->handlerDriver0Reverse(); }
-void handleDriver0Halt() { device->handlerDriver0Halt(); }
-void handleDriver0Move() { device->handlerDriver0Move(); }
-void handleDriver0MoveAbsolute() { device->handlerDriver0MoveAbsolute(); }
-void handleDriver0MoveMechanical() { device->handlerDriver0MoveMechanical(); }
-void handleDriver0Sync() { device->handlerDriver0Sync(); }
+void handleDriver0Reverse() { rotatorHandler->handlerDriver0Reverse(); }
+void handleDriver0Halt() { rotatorHandler->handlerDriver0Halt(); }
+void handleDriver0Move() { rotatorHandler->handlerDriver0Move(); }
+void handleDriver0MoveAbsolute() { rotatorHandler->handlerDriver0MoveAbsolute(); }
+void handleDriver0MoveMechanical() { rotatorHandler->handlerDriver0MoveMechanical(); }
+void handleDriver0Sync() { rotatorHandler->handlerDriver0Sync(); }
 
 
 
@@ -124,10 +127,11 @@ void handleDriver0Sync() { device->handlerDriver0Sync(); }
  ******************************************/
 void setup()
 {
-  Serial.begin(9600);
+  Serial.begin(115200);
+  Serial.setTimeout(2000);
 
   // Initialize with log level and log output.
-  Log.begin(LOG_LEVEL_TRACE, &Serial);
+  Log.begin(LOG_LEVEL_ERROR, &Serial);
 
   Log.infoln("Connecting to WIFI...");
 
@@ -193,12 +197,18 @@ void setup()
   Log.infoln("Listening for Alpaca discovery requests...");
 
   Udp.begin(localPort);
+  /*
+  Serial.print("ASCOM.Arduino.Rotator ");
+  Serial.println("ver 1.0.0.8");
+  Serial.print("Pos = ");
+  Serial.println(rotatorDevice->getPosition());
+  */
 }
 
 void loop()
 {
   server->handleClient();
+  //serialCommand->serialRead();
   CheckForDiscovery();
-
   rotatorDevice->update();
 }

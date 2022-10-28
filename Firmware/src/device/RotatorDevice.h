@@ -9,6 +9,7 @@ class RotatorDevice
 {
     public:
         RotatorDevice();
+        AccelStepper* stepper;
 
         bool connected = false;
         String uniqueID = "";
@@ -17,21 +18,22 @@ class RotatorDevice
         bool    getIsMoving();
         double  getMechanicalPosition();
         double  getPosition();
-        bool    getReverseState();
+        int    getReverseState();
         double  getStepSize();
         double  getTargetPosition();
 
         void putReverseState(bool reverse);
         void putHalt();
-        void putMove(double position);
+        void putMove(long position);
         void putMoveAbsolute(double position);
         void putMoveMechanical(double position);
         void putSync(double position);
 
+        void findHome();
+
         void update();
 
     private:
-        AccelStepper* _stepper;
         bool _isFindingHome = false;
 
         bool _canReverse = true;
@@ -40,7 +42,7 @@ class RotatorDevice
         double _position = 0.0; // Degrees
         bool _reverseState = false;
         double _stepSize = 0.0;
-        double _targetPosition = 0.0;
+        long _targetPosition = 0.0;
         double _targetMechanicalPosition = 0.0;
 
         bool _halt = false;

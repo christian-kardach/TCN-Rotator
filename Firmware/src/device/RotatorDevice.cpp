@@ -2,24 +2,39 @@
 
 RotatorDevice::RotatorDevice()
 {
-    pinMode(CW_PIN, INPUT_PULLUP); 
-    pinMode(CCW_PIN, INPUT_PULLUP);
-
     pinMode(STEP_PIN, OUTPUT);
     pinMode(DIR_PIN, OUTPUT);
+    pinMode(EN_PIN, OUTPUT);
 
-    //pinMode(EN_PIN, OUTPUT);
-    
+    // pinMode(EN_PIN, OUTPUT);
+
     digitalWrite(STEP_PIN, LOW);
     digitalWrite(DIR_PIN, LOW);
-    //digitalWrite(EN_PIN, LOW);
+    digitalWrite(EN_PIN, LOW);
 
-    _stepper = new AccelStepper(AccelStepper::FULL4WIRE, STEP_PIN, DIR_PIN, CW_PIN, CCW_PIN, true);
-    _stepper->setMaxSpeed(800);// 5000 works good,  use 500000 for confrom test1000 geared rotator10000 for geared stepper   200 for non-geared large stepper(500 max)  also may depend on what else is on loop()
-    _stepper->setAcceleration(1000);//1000 for geared rotator  10000 for geared stepper    1000 for non-geared large stepper
-    _stepper->setCurrentPosition(0);
-    //_stepper->setCurrentPosition(readFocuserPos());
-  
+    stepper = new AccelStepper(AccelStepper::DRIVER, STEP_PIN, DIR_PIN);
+    /*
+    setMaxSpeed Info
+
+    5000 works good
+    500000 for confrom test
+    1000 geared rotator
+    10000 for geared stepper
+    200 for non-geared large stepper(500 max) also may depend on what else is on loop()
+    */
+    stepper->setMaxSpeed(500.0f);
+
+    /*
+    1000 for geared rotator
+    10000 for geared stepper
+    1000 for non-geared large stepper
+    */ 
+    stepper->setAcceleration(1000.0f);
+
+    stepper->setCurrentPosition(0);
+    //stepper->setCurrentPosition(readFocuserPos());
+    //stepper->setSpeed(45);
+    //stepper->moveTo(400*9);
 }
 
 /*
@@ -60,20 +75,27 @@ double RotatorDevice::getPosition()
 {
     Log.traceln("RotatorDevice::getPosition()");
     // In Degrees
-    double val = 0.0;
-    return val; //(double)_stepper->currentPosition();
+    
+    return (double)(stepper->currentPosition()/STEPS_PER_DEGREE); //((stepper->currentPosition()*0.9)/9);
 }
 
 /**
  * @brief Returns the rotator’s Reverse state.
- * 
- * @return true 
- * @return false 
+ *
+ * @return true
+ * @return false
  */
-bool RotatorDevice::getReverseState()
+int RotatorDevice::getReverseState()
 {
     Log.traceln("RotatorDevice::getReverseState()");
-    return _reverseState;
+    if(_reverseState == true)
+    {
+        return 1;
+    }
+    else 
+    {
+        return 0;
+    }
 }
 
 /*
@@ -82,6 +104,7 @@ The minimum StepSize, in degrees.
 */
 double RotatorDevice::getStepSize()
 {
+    _stepSize = 0.9;
     return _stepSize;
 }
 
@@ -92,7 +115,7 @@ The destination position angle for Move() and MoveAbsolute().
 double RotatorDevice::getTargetPosition()
 {
     Log.traceln("RotatorDevice::getTargetPosition()");
-    return _targetPosition;
+    return (double)(_targetPosition/STEPS_PER_DEGREE);
 }
 
 // PUT
@@ -113,7 +136,7 @@ Immediately stop any Rotator motion due to a previous Move or MoveAbsolute metho
 void RotatorDevice::putHalt()
 {
     Log.traceln("RotatorDevice::putHalt()");
-    _stepper->stop();
+    stepper->stop();
     _halt = true;
 }
 
@@ -121,11 +144,12 @@ void RotatorDevice::putHalt()
 Moves the rotator to a new relative position.
 Causes the rotator to move Position degrees relative to the current Position value.
 */
-void RotatorDevice::putMove(double position)
+void RotatorDevice::putMove(long position)
 {
+    Log.traceln("RotatorDevice::putMove(long position)");
     Log.traceln("RotatorDevice::putMove(double position)");
-    _targetPosition = position;
-    
+    _targetPosition = stepper->currentPosition()+(STEPS_PER_DEGREE * position);
+    stepper->moveTo(_targetPosition);
 }
 
 /*
@@ -145,7 +169,8 @@ Causes the rotator to move the mechanical position of Position degrees.
 void RotatorDevice::putMoveMechanical(double position)
 {
     Log.traceln("RotatorDevice::putMoveMechanical(double position)");
-    _targetMechanicalPosition = position;
+    long steps = STEPS_PER_DEGREE * position;
+    _targetMechanicalPosition = steps;
 }
 
 /*
@@ -159,28 +184,72 @@ void RotatorDevice::putSync(double position)
 
 void RotatorDevice::update()
 {
-    if(_stepper == nullptr)
+    if (stepper == nullptr)
     {
         return;
     }
-
-    if (_isFindingHome == true){
-        _stepper->moveTo(_targetPosition);
-      return;
-    }
-
-      
-    if(_targetPosition != _stepper->currentPosition())
+    
+    if (stepper->distanceToGo() == 0)
     {
-        if(_targetPosition < 0 || _targetPosition > maxSteps)
+        _isMoving = false;
+        //stepper->moveTo(_targetPosition);
+    }
+    else 
+    {
+        _isMoving = true;
+    }
+    
+	stepper->run();
+    /*
+    if (_isFindingHome == true)
+    {
+        stepper->moveTo(_targetPosition);
+        return;
+    }
+    */
+   /*
+    if (_targetPosition != stepper->currentPosition())
+    {
+        if (_targetPosition < 0 || _targetPosition > maxSteps)
         {
             Serial.println("out of range");
             return;
         }
-    else
-    {
-       _stepper->moveTo(_targetPosition);
+        else
+        {
+            stepper->moveTo(_targetPosition);
+        }
     }
-  }
 
+    stepper->run();
+    */
+}
+
+void RotatorDevice::findHome()
+{
+    /*
+    HEState = digitalRead(HOME_PIN);
+    // Serial.println("Finding Home");  // leave for testing
+    homeFound = false;
+    findingHome = true;
+    if (HEState == HIGH)
+    {                                                                     // sensor goes low by magnet
+        moveStepper(stepper.currentPosition() - findHomeStepSize, false); // ***  adjust speed by changing the -x number 100 seems to work well
+
+        findingHome = true;
+    }
+    if (HEState == LOW)
+    {
+        if (digitalRead(HOME_PIN) == LOW)
+        { // double check sensor state
+            homeFound = true;
+            findingHome = false;
+            saveCurrentPos(maxSteps / 2); // allow for 2 complete revolustions.  centered at 360 degrees
+            Serial.print("H ");
+            Serial.print("true"); // true
+            Serial.println("#");  //  add stop bit
+            Serial.println(HEState);
+        }
+    }
+    */
 }

@@ -1,6 +1,8 @@
 #include "device/RotatorHandler.h"
 
 /*
+ASCOM Return Messages
+
 Successful transaction 0x0 (0) N/A
 Property or method not implemented 0x400 (1024) 0x80040400
 Invalid value 0x401 (1025) 0x80040401
@@ -27,6 +29,13 @@ void RotatorHandler::debugServerQuery()
         Log.traceln("%s" CR, _server->arg(i));
         Log.traceln("--------------------------");
     }
+}
+
+void RotatorHandler::transactionDetails()
+{
+    clientID = (uint32_t)_server->arg("ClientID").toInt();
+    transID = (uint32_t)_server->arg("ClientTransactionID").toInt();
+    deviceNumber = (uint32_t)_server->arg("device_number").toInt();
 }
 
 void RotatorHandler::incrementServerTransID()
@@ -438,9 +447,8 @@ True if the Rotator supports the Reverse method.
 void RotatorHandler::handlerDriver0CanReverse()
 {
     Log.traceln("handlerDriver0TargetPosition called");
+    transactionDetails();
     
-    clientID = (uint32_t)_server->arg("ClientID").toInt();
-    transID = (uint32_t)_server->arg("ClientTransactionID").toInt();
     returnBoolValue(_rotatorDevice->getCanReverse(), "", 0);
 }
 
@@ -450,9 +458,8 @@ True if the rotator is currently moving to a new position. False if the focuser 
 void RotatorHandler::handlerDriver0IsMoving()
 {
     Log.traceln("handlerDriver0IsMoving called");
-    
-    clientID = (uint32_t)_server->arg("ClientID").toInt();
-    transID = (uint32_t)_server->arg("ClientTransactionID").toInt();
+    transactionDetails();
+
     returnBoolValue(_rotatorDevice->getIsMoving(), "", 0);
 }
 
@@ -462,9 +469,8 @@ Returns the raw mechanical position of the rotator in degrees.
 void RotatorHandler::handlerDriver0MechanicalPosition()
 {
     Log.traceln("handlerDriver0MechanicalPosition called");
-    
-    clientID = (uint32_t)_server->arg("ClientID").toInt();
-    transID = (uint32_t)_server->arg("ClientTransactionID").toInt();
+    transactionDetails();
+
     returnDoubleValue(_rotatorDevice->getMechanicalPosition(), "", 0);
 }
 
@@ -474,9 +480,8 @@ Current instantaneous Rotator position, in degrees.
 void RotatorHandler::handlerDriver0Position()
 {
     Log.traceln("handlerDriver0Position called");
-    
-    clientID = (uint32_t)_server->arg("ClientID").toInt();
-    transID = (uint32_t)_server->arg("ClientTransactionID").toInt();
+    transactionDetails();
+
     returnDoubleValue(_rotatorDevice->getPosition(), "", 0);
 }
 
@@ -486,9 +491,8 @@ Returns the rotator’s Reverse state.
 void RotatorHandler::handlerDriver0GetReverse()
 {
     Log.traceln("handlerDriver0Reverse called");
-    
-    clientID = (uint32_t)_server->arg("ClientID").toInt();
-    transID = (uint32_t)_server->arg("ClientTransactionID").toInt();
+    transactionDetails();
+
     returnBoolValue(_rotatorDevice->getReverseState(), "", 0);
 }
 
@@ -498,9 +502,8 @@ The minimum StepSize, in degrees.
 void RotatorHandler::handlerDriver0StepSize()
 {
     Log.traceln("handlerDriver0StepSize called");
+    transactionDetails();
     
-    clientID = (uint32_t)_server->arg("ClientID").toInt();
-    transID = (uint32_t)_server->arg("ClientTransactionID").toInt();
     returnDoubleValue(_rotatorDevice->getStepSize(), "", 0);
 }
 
@@ -510,9 +513,8 @@ The destination position angle for Move() and MoveAbsolute().
 void RotatorHandler::handlerDriver0TargetPosition()
 {
     Log.traceln("handlerDriver0TargetPosition called");
+    transactionDetails();
     
-    clientID = (uint32_t)_server->arg("ClientID").toInt();
-    transID = (uint32_t)_server->arg("ClientTransactionID").toInt();
     returnDoubleValue(_rotatorDevice->getTargetPosition(), "", 0);
 }
 
@@ -523,17 +525,11 @@ Sets the rotator’s Reverse state.
 void RotatorHandler::handlerDriver0Reverse()
 {
     Log.traceln("handlerDriver0Reverse called");
-
-    clientID = (uint32_t)_server->arg("ClientID").toInt();
-    transID = (uint32_t)_server->arg("ClientTransactionID").toInt();
-    // u_int32_t deviceNumber = (uint32_t)_server->arg("device_number").toInt();
-    u_int32_t id = (uint32_t)_server->arg("ID").toInt();
-
-    int rev = _server->arg("Reverse").toInt();
+    transactionDetails();
 
     if (_server->method() == HTTP_PUT)
     {
-        
+        int rev = _server->arg("Reverse").toInt();        
         _rotatorDevice->putReverseState(1);
         returnEmpty("", 0);
     }
@@ -545,15 +541,10 @@ Immediately stop any Rotator motion due to a previous Move or MoveAbsolute metho
 void RotatorHandler::handlerDriver0Halt()
 {
     Log.traceln("handlerDriver0Halt called");
-
-    clientID = (uint32_t)_server->arg("ClientID").toInt();
-    transID = (uint32_t)_server->arg("ClientTransactionID").toInt();
-    // u_int32_t deviceNumber = (uint32_t)_server->arg("device_number").toInt();
-    u_int32_t id = (uint32_t)_server->arg("ID").toInt();
+    transactionDetails();
 
     if (_server->method() == HTTP_PUT)
     {
-        
         _rotatorDevice->putHalt();
         returnEmpty("", 0);
     }
@@ -564,19 +555,12 @@ Causes the rotator to move Position degrees relative to the current Position val
 */
 void RotatorHandler::handlerDriver0Move()
 {
-    debugServerQuery();
     Log.traceln("handlerDriver0Move called");
-
-    clientID = (uint32_t)_server->arg("ClientID").toInt();
-    transID = (uint32_t)_server->arg("ClientTransactionID").toInt();
-    // u_int32_t deviceNumber = (uint32_t)_server->arg("device_number").toInt();
-    u_int32_t id = (uint32_t)_server->arg("ID").toInt();
-
-    double position = _server->arg("Position ").toDouble();
+    transactionDetails();
 
     if (_server->method() == HTTP_PUT)
     {
-        
+        long position = (long)_server->arg("Position").toDouble();
         _rotatorDevice->putMove(position);
         returnEmpty("", 0);
     }
@@ -587,17 +571,12 @@ Causes the rotator to move the absolute position of Position degrees.
 */
 void RotatorHandler::handlerDriver0MoveAbsolute()
 {
-    debugServerQuery();
     Log.traceln("handlerDriver0MoveAbsolute called");
-
-    clientID = (uint32_t)_server->arg("ClientID").toInt();
-    transID = (uint32_t)_server->arg("ClientTransactionID").toInt();
-    // u_int32_t deviceNumber = (uint32_t)_server->arg("device_number").toInt();
-    u_int32_t id = (uint32_t)_server->arg("ID").toInt();
-
+    transactionDetails();
+    
     if (_server->method() == HTTP_PUT)
     {
-        double position = _server->arg("Position ").toDouble();
+        double position = _server->arg("Position").toDouble();
         _rotatorDevice->putMoveAbsolute(position);
         returnEmpty("", 0);
     }
@@ -609,15 +588,11 @@ Causes the rotator to move the mechanical position of Position degrees.
 void RotatorHandler::handlerDriver0MoveMechanical()
 {
     Log.traceln("handlerDriver0MoveAbsolute called");
-
-    clientID = (uint32_t)_server->arg("ClientID").toInt();
-    transID = (uint32_t)_server->arg("ClientTransactionID").toInt();
-    // u_int32_t deviceNumber = (uint32_t)_server->arg("device_number").toInt();
-    u_int32_t id = (uint32_t)_server->arg("ID").toInt();
+    transactionDetails();
 
     if (_server->method() == HTTP_PUT)
     {
-        double position = _server->arg("Position ").toDouble();
+        double position = _server->arg("Position").toDouble();
         _rotatorDevice->putMoveMechanical(position);
         returnEmpty("", 0);
     }
@@ -629,16 +604,14 @@ Syncs the rotator to the specified position angle without moving it.
 void RotatorHandler::handlerDriver0Sync()
 {
     Log.traceln("handlerDriver0MoveAbsolute called");
-
-    clientID = (uint32_t)_server->arg("ClientID").toInt();
-    transID = (uint32_t)_server->arg("ClientTransactionID").toInt();
-    // u_int32_t deviceNumber = (uint32_t)_server->arg("device_number").toInt();
-    u_int32_t id = (uint32_t)_server->arg("ID").toInt();
+    transactionDetails();
 
     if (_server->method() == HTTP_PUT)
     {
-        double position = _server->arg("Position ").toDouble();
+        double position = _server->arg("Position").toDouble();
         _rotatorDevice->putSync(position);
         returnEmpty("", 0);
     }
 }
+
+// -----------------------------------------------------------------------

@@ -53,6 +53,7 @@ class RotatorHandler
     private:
         uint32_t transID;
         uint32_t clientID;
+        u_int32_t deviceNumber;
         uint32_t serverTransactionID = 0;
         String uniqueID = "4431281c-8560-4ad7-982f-5a6e507dda19";
 
@@ -70,5 +71,6 @@ class RotatorHandler
         void returnDoubleValue(double val, String errMsg, int errNr);
 
         void debugServerQuery();
+        void transactionDetails();
         
 };
